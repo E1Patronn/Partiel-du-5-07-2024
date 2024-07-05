@@ -1,0 +1,62 @@
+- name: App
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Mettre à jour les paquets apt
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Installer les dépendances nécessaires
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-venv
+          - git
+        state: present
+
+    - name: Cloner le repository gist
+      ansible.builtin.git:
+        repo: 'https://gist.github.com/thibaultserti/21456f4797100376f67443920e5d5145.git'
+        dest: /opt/mysoftware
+
+    - name: Créer un environnement virtuel Python
+      ansible.builtin.command:
+        cmd: python3 -m venv /opt/mysoftware/venv
+
+    - name: Installer les dépendances Python
+      ansible.builtin.pip:
+        requirements: /opt/mysoftware/requirements.txt
+        virtualenv: /opt/mysoftware/venv
+
+    - name: Lancer l'API avec Uvicorn
+      ansible.builtin.shell: source /opt/mysoftware/venv/bin/activate && uvicorn main:app --reload
+      args:
+        chdir: /opt/mysoftware
+      async: 1
+      poll: 0
+
+    - name: Créer un fichier de service systemd pour l'API
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/mysoftware.service
+        content: |
+          [Unit]
+          Description=Gunicorn instance to serve mysoftware API
+          After=network.target
+
+          [Service]
+          User=root
+          Group=root
+          WorkingDirectory=/opt/mysoftware
+          Environment="PATH=/opt/mysoftware/venv/bin"
+          ExecStart=/opt/mysoftware/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Démarrer et activer le service mysoftware
+      ansible.builtin.systemd:
+        name: mysoftware
+        enabled: yes
+        state: started
