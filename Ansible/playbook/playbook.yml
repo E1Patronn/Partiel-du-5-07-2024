@@ -3,6 +3,12 @@
   become: true
 
   tasks:
+    - name: Créer un utilisateur pour l'API
+      ansible.builtin.user:
+        name: apiuser
+        comment: "User for running the API"
+        create_home: yes
+        
     - name: Mettre à jour les paquets apt
       ansible.builtin.apt:
         update_cache: yes
@@ -30,6 +36,17 @@
         requirements: /opt/mysoftware/requirements.txt
         virtualenv: /opt/mysoftware/venv
 
+    - name: Créer le fichier de service systemd pour l'API
+      ansible.builtin.template:
+        src: templates/mysoftware-api.service.j2
+        dest: /etc/systemd/system/mysoftware-api.service
+
+    - name: Activer le service systemd pour l'API
+      ansible.builtin.systemd:
+        name: mysoftware-api
+        state: started
+        enabled: yes
+
     - name: Lancer l'API avec Uvicorn
       ansible.builtin.shell: source /opt/mysoftware/venv/bin/activate && uvicorn main:app --reload
       args:
@@ -37,26 +54,4 @@
       async: 1
       poll: 0
 
-    - name: Créer un fichier de service systemd pour l'API
-      ansible.builtin.copy:
-        dest: /etc/systemd/system/mysoftware.service
-        content: |
-          [Unit]
-          Description=Gunicorn instance to serve mysoftware API
-          After=network.target
-
-          [Service]
-          User=root
-          Group=root
-          WorkingDirectory=/opt/mysoftware
-          Environment="PATH=/opt/mysoftware/venv/bin"
-          ExecStart=/opt/mysoftware/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
-
-          [Install]
-          WantedBy=multi-user.target
-
-    - name: Démarrer et activer le service mysoftware
-      ansible.builtin.systemd:
-        name: mysoftware
-        enabled: yes
-        state: started
+        
