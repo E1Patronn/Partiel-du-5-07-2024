@@ -11,4 +11,4 @@ Pour la partie ansible on peut diviser le playbook en plusieurs parties :
 - Créer un environnement python
 - Install les dépendances python
 - Lancer l'api avec Uvicorn
-- Création d'un fichier pour le lancement automatique au redémarrage de la machine 
+- Création d'un fichier pour le lancement automatique au redémarrage de la machine et l'activer
