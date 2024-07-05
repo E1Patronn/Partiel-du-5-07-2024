@@ -4,6 +4,7 @@ J'ai commencé par créer une machine virtuelle avec le code terraform. La VM a 
 
 Pour la partie ansible on peut diviser le playbook en plusieurs parties : 
 
+- Création d'un utilisateur pour lancer l'API
 - On va mettre à jour la machine 
 - On va installer python et toutes les dépendances
 - Cloner le repo git donner
